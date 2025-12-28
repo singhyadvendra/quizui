@@ -6,6 +6,7 @@ import type {
   StartAttemptResponseDto,
   SubmitAttemptRequestDto,
   AttemptResultDto,
+  AttemptReviewDto,
   MeDto,
 } from "./types";
 
@@ -37,4 +38,9 @@ export const api = {
       body: payload,
     });
   },
+
+  getAttemptReview(attemptId: number): Promise<AttemptReviewDto> {
+  return apiFetch<AttemptReviewDto>(`/api/attempts/${attemptId}/review`);
+}
+
 };

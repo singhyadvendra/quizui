@@ -14,6 +14,7 @@ export interface OptionDto {
   id: number;
   optionNo: number;
   text: string;
+  score: number;
 }
 
 export interface QuestionDto {
@@ -23,14 +24,28 @@ export interface QuestionDto {
   text: string;
 
   /**
-   * Backend sends as string (e.g., "2", "5").
-   * Keep as string to match API payload.
+   * Scoring mode for this question.
+   * - BINARY   → legacy correct/incorrect
+   * - WEIGHTED → best / second-best / partial credit
+   */
+  scoringMode: "BINARY" | "WEIGHTED";
+
+  /**
+   * For BINARY questions:
+   *   - points = max points (e.g. "1")
+   *
+   * For WEIGHTED questions:
+   *   - points represents the MAX possible score
+   *     (backend should send max option score as string)
+   *
+   * Kept as string to match API payload.
    */
   points: string;
 
   required: boolean;
   options: OptionDto[];
 }
+
 
 export interface StartAttemptResponseDto {
   attemptId: number;
@@ -57,6 +72,47 @@ export interface AttemptResultDto {
   startedAt: string;   // ISO
   submittedAt: string; // ISO
 }
+
+export interface AttemptReviewDto {
+  attemptId: number;
+  quizId: number;
+  quizTitle: string;
+  status: string;
+
+  score: string;
+  totalPoints: string;
+
+  startedAt: string;
+  submittedAt: string;
+
+  items: AttemptReviewItemDto[];
+}
+
+export interface AttemptReviewItemDto {
+  questionId: number;
+  questionNo: number;
+  type: QuestionType;
+  text: string;
+
+  /**
+   * Score achieved for this question.
+   * Backend sends as string.
+   */
+  achievedScore: string;
+
+  /**
+   * Maximum possible score for this question.
+   * Backend sends as string.
+   */
+  maxScore: string;
+
+  required: boolean;
+  options: OptionDto[];
+  selectedOptionIds: number[];
+  correctOptionIds: number[];
+  isCorrect: boolean;
+}
+
 
 export interface ApiViolationDto {
   field: string;

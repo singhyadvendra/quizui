@@ -14,30 +14,55 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   onToggleOption,
   onClear,
 }) => {
+  const isMulti = question.type === "MULTI";
+  const isWeighted = question.scoringMode === "WEIGHTED";
+
   return (
     <div className="card shadow-lg p-5 rounded-4 bg-white border-0">
+      {/* Header */}
       <div className="d-flex justify-content-between align-items-start mb-2">
-        <h4 className="text-primary mb-0">{question.text}</h4>
+        <h4 className="text-primary mb-0">
+          Q{question.questionNo}. {question.text}
+        </h4>
+
         <span className="badge bg-secondary">
-          {question.type === "MULTI" ? "Multi-select" : "Single-select"}
+          {isMulti ? "Multi-select" : "Single-select"}
         </span>
       </div>
 
-      <div className="d-flex gap-2 align-items-center mb-4">
-        <div className="text-muted">Points: {question.points}</div>
-        {question.required && <span className="badge bg-warning text-dark">Required</span>}
+      {/* Meta */}
+      <div className="d-flex flex-wrap gap-2 align-items-center mb-4">
+        <div className="text-muted">
+          Max score: <strong>{question.points}</strong>
+        </div>
+
+        {isWeighted && (
+          <span className="badge bg-info text-dark">
+            Weighted scoring
+          </span>
+        )}
+
+        {question.required && (
+          <span className="badge bg-warning text-dark">
+            Required
+          </span>
+        )}
       </div>
 
+      {/* Options */}
       <div className="d-grid gap-2">
         {question.options.map((opt, idx) => {
           const selected = selectedOptionIds.includes(opt.id);
+
           return (
             <button
               key={opt.id}
               type="button"
               onClick={() => onToggleOption(opt.id)}
               className={`btn text-start p-3 border-2 ${
-                selected ? "btn-primary border-primary" : "btn-outline-secondary border-light-subtle"
+                selected
+                  ? "btn-primary border-primary"
+                  : "btn-outline-secondary border-light-subtle"
               }`}
             >
               <strong>{String.fromCharCode(65 + idx)}.</strong> {opt.text}
@@ -46,13 +71,19 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         })}
       </div>
 
-      {question.type === "MULTI" && (
+      {/* Footer */}
+      {isMulti && (
         <div className="mt-3 d-flex justify-content-between align-items-center">
           <div className="text-muted" style={{ fontSize: "0.95rem" }}>
             You can select multiple options.
           </div>
+
           {onClear && (
-            <button className="btn btn-sm btn-outline-secondary" onClick={onClear} type="button">
+            <button
+              className="btn btn-sm btn-outline-secondary"
+              onClick={onClear}
+              type="button"
+            >
               Clear
             </button>
           )}

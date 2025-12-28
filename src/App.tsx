@@ -4,7 +4,7 @@ import { Link, Navigate, Route, Routes } from "react-router-dom";
 
 import { api } from "./api";
 import { ApiError } from "./api/http";
-import type { AttemptResultDto, MeDto, QuestionDto, QuizSummaryDto } from "./types";
+import type { AttemptResultDto, AttemptReviewDto, MeDto, QuestionDto, QuizSummaryDto } from "./types";
 
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminHome from "./pages/admin/AdminHome";
@@ -118,6 +118,9 @@ function QuizPlayer() {
   // answers: questionId -> optionIds[]
   const [answers, setAnswers] = useState<Record<number, number[]>>({});
   const [attemptId, setAttemptId] = useState<number | null>(null);
+
+  const [review, setReview] = useState<AttemptReviewDto | null>(null);
+
 
   const [result, setResult] = useState<AttemptResultDto | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -317,6 +320,8 @@ function QuizPlayer() {
 
       const res = await api.submitAttempt(attemptId, payload);
       setResult(res);
+      const reviewData = await api.getAttemptReview(attemptId);
+      setReview(reviewData);
       setStage("RESULT");
     } catch (e) {
       if (isAuthRequired(e)) {
@@ -443,33 +448,104 @@ function QuizPlayer() {
     );
   }
 
-  if (stage === "RESULT" && result) {
-    return (
-      <div className="container py-5" style={{ maxWidth: 720 }}>
-        <div className="card p-5">
-          <h2 className="mb-2">Submitted</h2>
-          <div className="text-muted mb-4">Attempt #{result.attemptId}</div>
+  if (stage === "RESULT" && result && review) {
+  return (
+    <div className="container py-5" style={{ maxWidth: 900 }}>
+      <div className="card p-5 mb-4">
+        <h2 className="mb-2">Exam Summary</h2>
 
-          <div className="fs-4 mb-2">
-            Score: <strong>{result.score}</strong> / {result.totalPoints}
-          </div>
-          <div className="text-muted">
-            Submitted at: {new Date(result.submittedAt).toLocaleString()}
-          </div>
+        <div className="fs-4 mb-2">
+          Score: <strong>{review.score}</strong> / {review.totalPoints}
+        </div>
 
-          <button
-            className="btn btn-primary mt-4"
-            onClick={() => {
-              resetQuizState();
-              setStage("QUIZ_PICK");
-            }}
-          >
-            Back to Quizzes
-          </button>
+        <div className="text-muted">
+          Submitted at: {new Date(review.submittedAt).toLocaleString()}
         </div>
       </div>
-    );
-  }
+
+      {review.items.map((q) => {
+        const isPerfect = q.achievedScore === q.maxScore;
+        const isZero = q.achievedScore === "0";
+
+        return (
+          <div key={q.questionId} className="card p-4 mb-3">
+            <div className="d-flex justify-content-between align-items-start">
+              <h5>
+                Q{q.questionNo}. {q.text}
+              </h5>
+
+              <span
+                className={`badge ${
+                  isPerfect
+                    ? "bg-success"
+                    : isZero
+                    ? "bg-danger"
+                    : "bg-warning text-dark"
+                }`}
+              >
+                {isPerfect
+                  ? "Best Answer"
+                  : isZero
+                  ? "Incorrect"
+                  : "Partially Correct"}
+              </span>
+            </div>
+
+            <div className="text-muted mb-2">
+              Score: <strong>{q.achievedScore}</strong> / {q.maxScore}
+            </div>
+
+            <ul className="list-group">
+              {q.options.map((opt) => {
+                const isSelected = q.selectedOptionIds.includes(opt.id);
+
+                return (
+                  <li
+                    key={opt.id}
+                    className={`list-group-item d-flex justify-content-between align-items-center ${
+                      isSelected ? "list-group-item-primary" : ""
+                    }`}
+                  >
+                    <span>
+                      {opt.text}
+                      {isSelected && <strong> (selected)</strong>}
+                    </span>
+
+                    {typeof opt.score === "number" && (
+                      <span
+                        className={`badge ${
+                          opt.score === q.maxScore
+                            ? "bg-success"
+                            : opt.score > 0
+                            ? "bg-warning text-dark"
+                            : "bg-secondary"
+                        }`}
+                      >
+                        {opt.score} mark{opt.score === 1 ? "" : "s"}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
+
+
+      <button
+        className="btn btn-primary mt-4"
+        onClick={() => {
+          resetQuizState();
+          setStage("QUIZ_PICK");
+        }}
+      >
+        Back to Quizzes
+      </button>
+    </div>
+  );
+}
+
 
   // IN_PROGRESS
   const total = questions.length;
