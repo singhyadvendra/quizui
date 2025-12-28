@@ -8,6 +8,7 @@ export interface QuizSummaryDto {
   description: string | null;
   active: boolean;
   createdAt: string; // ISO
+  
 }
 
 export interface OptionDto {

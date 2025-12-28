@@ -110,6 +110,22 @@ function QuizPlayer() {
   const [me, setMe] = useState<MeDto | null>(null);
 
   const [quizzes, setQuizzes] = useState<QuizSummaryDto[]>([]);
+
+  const quizzesByTopic = useMemo(() => {
+    const map: Record<string, QuizSummaryDto[]> = {};
+
+    quizzes.forEach(q => {
+      const topic = q.topicName || "Uncategorized";
+      if (!map[topic]) {
+        map[topic] = [];
+      }
+      map[topic].push(q);
+    });
+
+    return map;
+  }, [quizzes]);
+
+
   const [selectedQuizId, setSelectedQuizId] = useState<number | null>(null);
 
   const [questions, setQuestions] = useState<QuestionDto[]>([]);
@@ -413,37 +429,46 @@ function QuizPlayer() {
             <div className="text-muted">Loading quizzes…</div>
           </div>
         ) : Array.isArray(quizzes) ? (
-          <div className="row g-3">
-            {quizzes.map((q) => (
-              <div key={q.id} className="col-12 col-md-6">
-                <div className="card p-4 h-100">
-                  <h5 className="mb-2">{q.title}</h5>
-                  <div className="text-muted mb-3" style={{ minHeight: 48 }}>
-                    {q.description ?? "No description"}
-                  </div>
+          <>
+            {Object.entries(quizzesByTopic).map(([topic, qs]) => (
+              <section key={topic} className="mb-5">
+                <h4 className="mb-3 text-primary">{topic}</h4>
 
-                  <button
-                    className="btn btn-success"
-                    onClick={() => pickQuiz(q.id)}
-                    disabled={loadingStart}
-                  >
-                    {loadingStart && selectedQuizId === q.id ? "Starting…" : "Start"}
-                  </button>
+                <div className="row g-3">
+                  {qs.map((q) => (
+                    <div key={q.id} className="col-12 col-md-6">
+                      <div className="card p-4 h-100">
+                        <h5 className="mb-2">{q.title}</h5>
+                        <div className="text-muted mb-3" style={{ minHeight: 48 }}>
+                          {q.description ?? "No description"}
+                        </div>
+
+                        <button
+                          className="btn btn-success"
+                          onClick={() => pickQuiz(q.id)}
+                          disabled={loadingStart}
+                        >
+                          {loadingStart && selectedQuizId === q.id
+                            ? "Starting…"
+                            : "Start"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              </section>
             ))}
 
             {quizzes.length === 0 && (
-              <div className="col-12">
-                <div className="alert alert-warning mb-0">No active quizzes found.</div>
-              </div>
+              <div className="alert alert-warning mb-0">No active quizzes found.</div>
             )}
-          </div>
+          </>
         ) : (
           <div className="alert alert-danger">
             Unexpected response while loading quizzes. Please login again.
           </div>
         )}
+
       </div>
     );
   }
